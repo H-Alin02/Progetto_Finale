@@ -109,7 +109,8 @@ Questo processo è fondamentale per:
 \subsection{Riduzione della dimensionalità}
 E' stata applicata l'analisi delle componenti principali (PCA) per:
 \begin{itemize}
-    \item Riduzione della dimensionalità dei dati mantenendo il 95\% della varianza
+    \item Riduzione della dimensionalità dei dati mantenendo il 95\% della varianza, riducendo 
+    \item il numero di features da 784 a 115. 
     \item Diminuire il rumore nei dati
     \item Migliorare l'efficienza computazionale in generale
 \end{itemize}
@@ -130,29 +131,30 @@ con caratteristiche specifiche:
     \item \textbf{MLPClassifier}: Una rete neurale a più strati con le seguenti caratteristiche
     
         \begin{itemize}
-            \item Architettura: tre layer nascosti (256, 128, 64 neuroni)
+            \item Architettura: un layer nascosto con 32 neuroni;
             \item Funzione di attivazione ReLU
             \item Ottimizzatore: Adam
-            \item Numero massimo di iterazioni: 5000
-            \item Regolarizzazione L2 con \texttt{alpha=0.0001}
+            \item Numero massimo di iterazioni: 500
+            \item Regolarizzazione L2 con \texttt{alpha=5.0}
         \end{itemize}
 
     \item \textbf{Support Vector Machine (SVM)}: Un algoritmo di classificazione che trova un iperpiano 
-    ottimale che separa le classi. In questo progetto, l'algoritmo SVM utilizza il kernel Radial Basis 
-    Function (RBF) per proiettare i dati in uno spazio di alta dimensionalità e trovare l'iperpiano 
-    di separazione.
+    ottimale che separa le classi. Si imposta il parametro \( C = 0.1\) per aumentare il margine per meglio 
+    classificare i dati non linearmente separabili.
     
     \item \textbf{Decision Tree}: Un modello basato su una struttura ad albero, che suddivide i dati in 
     base a regole decisionali sequenziali, fino a profondità massiama di 25. 
 \end{itemize}
 
-\paragraph{Metriche di valutazione}
+\subsection{Metriche di valutazione}
 
 Per valutare le performance dei modelli sono state utilizzate le seguenti metriche di valutazione: 
 \begin{itemize}
     \item \textbf{Accuracy}: Rappresenta la percentuale di campioni correttamente classificati.
-    \item \textbf{F1\_score}: \[F1 = 2 \cdot \frac{\text{Precision} \cdot 
-                                    \text{Recall}}{\text{Precision} + \text{Recall}}\]
+    \item \textbf{F1\_score}: 
+    \[
+    F1 = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} \,.
+    \]
     Media armonica tra precision\footnote{La percentuale di esempi correttamente 
     classificati rispetto a tutti quelli predetti per una certa classe} e recall\footnote{La percentuale di 
     esempi correttamente classificati rispetto a tutti i veri esempi di una certa classe}
@@ -161,7 +163,22 @@ Per valutare le performance dei modelli sono state utilizzate le seguenti metric
     classificati per ogni classe.
 \end{itemize}
 
-I risultati sono stati confrontati tramite un grafico a barre che mostra le accuratezze dei modelli
+\subsection{K-Fold Cross Validation}
+
+Per valutare le performance dei modelli in maniera più robusta, è stato utilizzato il 
+K-Fold Cross Validation con $K=5$. 
+
+Questa tecnica consiste nel suddividere il dataset in 
+$K$ sottinsiemi (chiamati "fold") e addestrare il modello $K$ volte, ogni volta 
+utilizzando un fold diverso come set di test e gli altri $K-1$ come set di addestramento. 
+
+Si possono quindi ottenere informazioni sulla stabilità del modello e sulla sua capacità di generalizzare su nuovi dati.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.8]{Figures/KfoldCrossValidation.jpeg}
+    \label{fig:KfoldCrossValidation}
+\end{figure}
 
 \clearpage
 \section{Risultati ottenuti}
@@ -174,24 +191,29 @@ L'analisi delle performance ha prodotto i seguenti risultati:
 \end{figure}
 
 \begin{itemize}
-    \item \textbf{Support Vector Machine (SVM)} ha ottenuto l'accuratezza migliore (86\%) tra i 
-    modelli analizzati, sebbene con un alto costo computazionale. 
-    Questo modello è stato particolarmente efficace nel trovare l'iperpiano ottimale grazie alla sua 
-    capacità di lavorare in spazi ad alta dimensione. Tuttavia, la sua performance è stata limitata 
-    dalla necessità di una grande quantità di risorse computazionali, rendendo la sua implementazione 
-    meno pratica in scenari a larga scala.
+    \item \textbf{Support Vector Machine (SVM)} ha ottenuto l'accuratezza migliore (81\%) tra i 
+    modelli analizzati, sebbene con un alto costo computazionale. Si sono riscontrati problemi con l'\textbf{overfitting} 
+    rendendo il modello molto accurato sui dati di training però fallendo a generalizzare su dati mai visti.
     
-    \item \textbf{MLPClassifier} ha raggiunto un'accuratezza dell'80\%, posizionandosi al secondo 
-    posto. Il modello ha avuto successo grazie alla sua capacità di catturare pattern complessi 
-    nelle immagini grazie alla struttura a più layer nascosti. 
+    \item \textbf{MLPClassifier} ha raggiunto un'accuratezza dell'78\%, posizionandosi al secondo 
+    posto. Anche in questo caso si sono riscontrati problemi con l'\textbf{overfitting}, 
+    vista la difficoltà di ideare un'architettura per un MLP che sia perfetta e combini buona capacità di generalizzazione e 
+    accuratezza. 
     
-    \item \textbf{Naive Bayes} ha ottenuto un'accuratezza del (60\%), principalmente a causa 
+    \item \textbf{Naive Bayes} ha ottenuto un'accuratezza del (61\%), principalmente a causa 
     dell'assunzione di indipendenza tra le features. 
     Questa ipotesi, non tiene conto che nelle immagini pixel vicini tendono ad avere valori di grigio simili.
     
-    \item \textbf{Decision Tree} ha mostrato i risultati peggiori (43\%). 
+    \item \textbf{Decision Tree} ha mostrato i risultati peggiori (45\%). 
     Il modello ha avuto difficoltà nel catturare pattern complessi, portando a performance 
     insoddisfacenti rispetto ad altri modelli più sofisticati. 
 \end{itemize}
+
+Per evitare il problema del overfitting si potrebbero utilizzare tecniche per la ricerca dei parametri 
+ottimali per i modelli, oppure si potrebbe aumentare la dimensione del dataset. 
+
+Si potrebbero utilizzare modelli di Machine Learning più complessi, come le reti Convolutional Neural Network (CNN), 
+che sono in grado di estrarre automaticamente le feature più importanti dalle immagini, utilizzando 
+filtri di convoluzione. 
 
 \end{document}
